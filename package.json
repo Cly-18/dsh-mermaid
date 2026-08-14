@@ -1,0 +1,29 @@
+{
+  "name": "dsh-mermaid",
+  "version": "1.0.0",
+  "description": "DSH web plugin: auto-render mermaid code blocks in the conversation with zoom/pan/toolbar/SVG export. Mermaid 11 is bundled inside the client bundle — fully offline, no CDN, no network at runtime.",
+  "type": "module",
+  "main": "lib/index.js",
+  "exports": {
+    ".": "./lib/index.js",
+    "./client": "./lib/client.js",
+    "./package.json": "./package.json"
+  },
+  "dsh": {
+    "client": {
+      "platform": "web"
+    }
+  },
+  "files": [
+    "lib/index.js",
+    "lib/client.js"
+  ],
+  "keywords": [
+    "dsh",
+    "deepseek-harness",
+    "mermaid",
+    "diagram",
+    "plugin"
+  ],
+  "license": "MIT"
+}
