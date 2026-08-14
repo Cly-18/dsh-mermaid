@@ -1,7 +1,7 @@
 {
   "name": "dsh-mermaid",
   "version": "1.0.0",
-  "description": "DSH web plugin: auto-render mermaid code blocks in the conversation with zoom/pan/toolbar/SVG export. Mermaid 11 is bundled inside the client bundle — fully offline, no CDN, no network at runtime.",
+  "description": "DSH Web 插件:自动渲染对话中的 mermaid 代码块,支持缩放/平移/工具栏/SVG 导出。Mermaid 11 已打包进客户端 bundle —— 完全离线,无 CDN,运行时零网络请求。",
   "type": "module",
   "main": "lib/index.js",
   "exports": {
