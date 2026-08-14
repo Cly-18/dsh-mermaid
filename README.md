@@ -9,7 +9,9 @@
 - 自动渲染对话中的每个 ` ```mermaid ` 代码块(包括 shadow DOM 内部)
 - 跟随应用浅色/深色模式的彩色主题
 - 图表居中显示在带最小高度的图形区域中
-- 工具栏(右上角,内联 SVG 图标按钮,带悬停提示):源码/图表切换 · 放大 · 缩小 · 重置 · 缩放百分比 · 导出SVG
+- 工具栏(右上角,内联 SVG 图标按钮,带悬停提示):源码/图表切换 · 放大 · 缩小 · 重置 · 缩放百分比 · 导出SVG · 全屏
+- 工具栏随页面滚动悬浮在代码块标题栏正下方(标题栏高度运行时测量,不写死)
+- 全屏显示:优先浏览器原生 Fullscreen API,失败时自动降级为页面内全屏覆盖层;两种模式均支持 ESC/按钮退出,全屏内缩放平移照常可用
 - 图形区域内自由拖拽平移,以中心为基准 25%–400% 缩放
 - 串行化渲染队列(一页多个图表也安全)
 - 健壮的文本提取:渲染前用 `mermaid.parse` 校验代码文本,并剥离混入的行号痕迹;插件重启后会重试失败的代码块(激活时重置陈旧的渲染标记)
@@ -59,7 +61,7 @@ node build.mjs
 - `package.json` 声明了 `dsh.client.platform: "web"` 并导出 `./client`;
   DSH 的 client-modules 主机半部扫描 Loader 条目,通过
   `/plugins/dsh-mermaid/client.js` 提供服务,并将其注入 `window.__DSH_BOOT__`。
-- bundle 是一个 `__ModuleLoader__` factory:mermaid IIFE 在 factory 作用域内执行并暴露 `globalThis.mermaid`,随后渲染器插件(`exports.apply`)监听 DOM,渲染每个 mermaid 代码块,并装配工具栏/缩放/平移/导出 UI。
+- bundle 是一个 `__ModuleLoader__` factory:mermaid IIFE 在 factory 作用域内执行并暴露 `globalThis.mermaid`,随后渲染器插件(`exports.apply`)监听 DOM,渲染每个 mermaid 代码块,并装配工具栏/缩放/平移/导出/全屏 UI。
 
 ## 许可证
 

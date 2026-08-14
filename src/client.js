@@ -111,7 +111,98 @@ function apply(ctx) {
     zoomIn: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></svg>',
     zoomOut: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="8" y1="11" x2="14" y2="11"/></svg>',
     reset: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>',
-    download: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>'
+    download: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>',
+    maximize: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>',
+    minimize: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3v3a2 2 0 0 1-2 2H3m18 0h-3a2 2 0 0 1-2-2V3m0 18v-3a2 2 0 0 1 2-2h3M3 16h3a2 2 0 0 1 2 2v3"/></svg>'
+  }
+
+  // ---- 全屏:优先浏览器原生 Fullscreen API,失败时降级为页面内 CSS 覆盖层 ----
+  const states = []
+  let bodyLocked = false
+  let savedOverflow = ''
+
+  const syncFs = (state) => {
+    const b = state.fsBtn
+    if (!b) return
+    const on = state.fullscreen
+    b.innerHTML = on ? icons.minimize : icons.maximize
+    const label = on ? '退出全屏' : '全屏显示'
+    b.title = label
+    b.setAttribute('aria-label', label)
+  }
+
+  const setBodyLock = () => {
+    let active = false
+    for (let i = 0; i < states.length; i++) { if (states[i].fullscreen) { active = true; break } }
+    if (active && !bodyLocked) {
+      savedOverflow = document.body.style.overflow
+      document.body.style.overflow = 'hidden'
+      bodyLocked = true
+    } else if (!active && bodyLocked) {
+      document.body.style.overflow = savedOverflow
+      bodyLocked = false
+    }
+  }
+
+  const cssFsOn = (state) => {
+    state.wrap.classList.add('dsh-mmd-fs')
+    state.fullscreen = true
+    syncFs(state)
+    setBodyLock()
+  }
+
+  const toggleFullscreen = (state) => {
+    const wrap = state.wrap
+    if (state.fullscreen) {
+      if (document.fullscreenElement) { try { document.exitFullscreen() } catch (e) {} }
+      wrap.classList.remove('dsh-mmd-fs')
+      state.fullscreen = false
+      syncFs(state)
+      setBodyLock()
+      return
+    }
+    if (document.fullscreenEnabled && typeof wrap.requestFullscreen === 'function') {
+      let p = null
+      try { p = wrap.requestFullscreen() } catch (e) {}
+      if (p && typeof p.then === 'function') {
+        p.then(() => { state.fullscreen = true; syncFs(state) }).catch(() => cssFsOn(state))
+      } else {
+        // 旧式 API 无 Promise:由 fullscreenchange 事件确认进入
+        state.fullscreen = true
+        syncFs(state)
+      }
+    } else {
+      cssFsOn(state)
+    }
+  }
+
+  const onFsChange = () => {
+    for (let i = 0; i < states.length; i++) {
+      const s = states[i]
+      const active = document.fullscreenElement === s.wrap
+      if (active) {
+        if (!s.fullscreen) { s.fullscreen = true; syncFs(s) }
+      } else if (s.fullscreen && !s.wrap.classList.contains('dsh-mmd-fs')) {
+        s.fullscreen = false
+        syncFs(s)
+      }
+    }
+    setBodyLock()
+  }
+
+  const onKeyDown = (e) => {
+    if (e.key !== 'Escape') return
+    let closed = false
+    for (let i = 0; i < states.length; i++) {
+      const s = states[i]
+      if (s.fullscreen && s.wrap.classList.contains('dsh-mmd-fs')) {
+        s.wrap.classList.remove('dsh-mmd-fs')
+        s.fullscreen = false
+        syncFs(s)
+        closed = true
+      }
+    }
+    if (closed) setBodyLock()
   }
 
   const createToolbar = (state) => {
@@ -142,6 +233,8 @@ function apply(ctx) {
     const zout = mkBtn(icons.zoomOut, () => { state.scale = Math.max(0.25, state.scale / 1.25); applyTransform(state) }, '缩小')
     const zreset = mkBtn(icons.reset, () => { state.scale = 1; state.panX = 0; state.panY = 0; applyTransform(state) }, '重置')
     const exportBtn = mkBtn(icons.download, () => exportSvg(state), '导出SVG')
+    const fsBtn = mkBtn(icons.maximize, () => toggleFullscreen(state), '全屏显示')
+    state.fsBtn = fsBtn
 
     const zoomLabel = document.createElement('span')
     zoomLabel.className = 'dsh-mmd-zoom'
@@ -154,6 +247,7 @@ function apply(ctx) {
     bar.appendChild(zreset)
     bar.appendChild(zoomLabel)
     bar.appendChild(exportBtn)
+    bar.appendChild(fsBtn)
     return bar
   }
 
@@ -224,7 +318,7 @@ function apply(ctx) {
       codeEl.textContent = text
       srcEl.appendChild(codeEl)
 
-      const state = { showSource: false, scale: 1, panX: 0, panY: 0, dragging: false, lastX: 0, lastY: 0, figure: figure, srcEl: srcEl, svgEl: svgEl, svg: svg, zoomLabel: null }
+      const state = { showSource: false, scale: 1, panX: 0, panY: 0, dragging: false, lastX: 0, lastY: 0, figure: figure, srcEl: srcEl, svgEl: svgEl, svg: svg, zoomLabel: null, wrap: wrap, fsBtn: null }
       const toolbar = createToolbar(state)
 
       // Stick the toolbar right below the GUI's code-block banner (标题栏),
@@ -238,6 +332,7 @@ function apply(ctx) {
       } catch (e) {}
       toolbar.style.top = bannerH + 'px'
 
+      states.push(state)
       enableDrag(state)
 
       wrap.appendChild(toolbar)
@@ -368,16 +463,32 @@ function apply(ctx) {
     '.dsh-mmd-svg{transform-origin:center center;transition:transform .05s linear}' +
     '.dsh-mmd-svg svg{max-width:none;display:block}' +
     '.dsh-mmd-src{margin:0;padding:12px;overflow:auto;font-size:12px;background:rgba(0,0,0,.04);border-radius:0 0 8px 8px}' +
-    '.dsh-mmd-src code{white-space:pre}'
+    '.dsh-mmd-src code{white-space:pre}' +
+    '.dsh-mmd-wrap:fullscreen,.dsh-mmd-wrap.dsh-mmd-fs{background:var(--dsw-alias-bg-base,#fff);display:flex;flex-direction:column;overflow:auto;border:none;border-radius:0;margin:0}' +
+    '.dsh-mmd-wrap.dsh-mmd-fs{position:fixed;inset:0;z-index:2147483000}' +
+    '.dsh-mmd-wrap:fullscreen .dsh-mmd-toolbar,.dsh-mmd-wrap.dsh-mmd-fs .dsh-mmd-toolbar{top:0!important;border-radius:0}' +
+    '.dsh-mmd-wrap:fullscreen .dsh-mmd-figure,.dsh-mmd-wrap.dsh-mmd-fs .dsh-mmd-figure{flex:1 1 auto;min-height:0}' +
+    '.dsh-mmd-wrap:fullscreen .dsh-mmd-src,.dsh-mmd-wrap.dsh-mmd-fs .dsh-mmd-src{flex:1 1 auto;border-radius:0}'
   document.head.appendChild(styleEl)
 
   attachObservers()
   resetStaleMarks()
   renderAll()
 
+  document.addEventListener('fullscreenchange', onFsChange)
+  document.addEventListener('keydown', onKeyDown)
+
   ctx.effect(() => {
     return () => {
       disposed = true
+      document.removeEventListener('fullscreenchange', onFsChange)
+      document.removeEventListener('keydown', onKeyDown)
+      for (let i = 0; i < states.length; i++) {
+        const s = states[i]
+        try { s.wrap.classList.remove('dsh-mmd-fs') } catch (e) {}
+      }
+      states.length = 0
+      if (bodyLocked) { try { document.body.style.overflow = savedOverflow } catch (e) {}; bodyLocked = false }
       for (let i = 0; i < observers.length; i++) { try { observers[i].disconnect() } catch (e) {} }
       if (schedule && typeof schedule.dispose === 'function') { try { schedule.dispose() } catch (e) {} }
       if (styleEl.parentNode) { try { styleEl.parentNode.removeChild(styleEl) } catch (e) {} }
