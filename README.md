@@ -1,33 +1,34 @@
 # dsh-mermaid
 
-A [DSH (DeepSeek Harness)](https://github.com/deepseek-ai/deepseek-harness) web plugin that auto-renders ```mermaid code blocks in the conversation.
+一个 [DSH (DeepSeek Harness)](https://github.com/deepseek-ai/deepseek-harness) Web 插件,自动渲染对话中的 ```mermaid 代码块。
 
-**Fully offline** — Mermaid 11 is bundled inside the client bundle. No CDN, no network, no runtime downloads.
+**完全离线** —— Mermaid 11 已打包进客户端 bundle。无 CDN、无网络、运行时零下载。
 
-## Features
+## 特性
 
-- Auto-render every ` ```mermaid ` code block in the conversation (including inside shadow DOM)
-- Colorful theme that follows the app's light/dark mode
-- Diagram centered in a figure area with a minimum height
-- Toolbar (top-right): 源码/图表 toggle · 放大 · 缩小 · 重置 · zoom % · 导出SVG
-- Free drag-panning inside the figure, zoom 25%–400% around the center
-- Serialized rendering queue (safe for many diagrams on one page)
+- 自动渲染对话中的每个 ` ```mermaid ` 代码块(包括 shadow DOM 内部)
+- 跟随应用浅色/深色模式的彩色主题
+- 图表居中显示在带最小高度的图形区域中
+- 工具栏(右上角,内联 SVG 图标按钮,带悬停提示):源码/图表切换 · 放大 · 缩小 · 重置 · 缩放百分比 · 导出SVG
+- 图形区域内自由拖拽平移,以中心为基准 25%–400% 缩放
+- 串行化渲染队列(一页多个图表也安全)
+- 健壮的文本提取:渲染前用 `mermaid.parse` 校验代码文本,并剥离混入的行号痕迹;插件重启后会重试失败的代码块(激活时重置陈旧的渲染标记)
 
-## Install
+## 安装
 
-The plugin is a dual-face package: a no-op node half plus a `dsh.client` browser half.
+插件是一个双面包:一个空操作的 node 半部 + 一个 `dsh.client` 浏览器半部。
 
-1. **Place the package** where your profile resolves packages from:
+1. **放置包文件**到你的 profile 解析包的目录:
 
    ```bash
-   # assume your profile is "web" and DSH home is ~/.dsh
+   # 假设你的 profile 名为 "web",DSH 主目录为 ~/.dsh
    mkdir -p ~/.dsh/profiles/node_modules/dsh-mermaid
    cp package.json lib/index.js lib/client.js ~/.dsh/profiles/node_modules/dsh-mermaid/
    ```
 
-   (or `npm install dsh-mermaid` / `npm link` if you publish it)
+   (如果发布到了 npm,也可以用 `npm install dsh-mermaid` / `npm link`)
 
-2. **Register the row** in your profile patch, e.g. `~/.dsh/profiles/web/cordis.patch.yml`:
+2. **在 profile 补丁中注册插件行**,例如 `~/.dsh/profiles/web/cordis.patch.yml`:
 
    ```yaml
    - insert:
@@ -35,37 +36,31 @@ The plugin is a dual-face package: a no-op node half plus a `dsh.client` browser
          name: 'dsh-mermaid'
    ```
 
-3. **Restart DSH.** Refresh the page — mermaid blocks now render, and they survive
-   page refreshes and offline use.
+3. **重启 DSH**,刷新页面 —— mermaid 代码块即刻开始渲染,刷新页面与离线使用均不受影响。
 
-## Build from source
+## 从源码构建
 
 ```bash
-# 1. put mermaid's browser build at vendor/mermaid.min.js
-#    (from the mermaid npm package: dist/mermaid.min.js)
-# 2. build the client bundle
+# 1. 把 mermaid 的浏览器构建产物放到 vendor/mermaid.min.js
+#    (取自 mermaid npm 包的 dist/mermaid.min.js)
+# 2. 构建客户端 bundle
 node build.mjs
-# → regenerates lib/client.js (factory wrapper + inlined mermaid + renderer)
+# → 重新生成 lib/client.js(factory 包装 + 内联 mermaid + 渲染器)
 ```
 
-The renderer source lives in `src/client.js`; the build concatenates it with the
-bundled mermaid IIFE inside the module factory.
+渲染器源码位于 `src/client.js`;构建脚本把它与打包好的 mermaid IIFE 拼接到模块 factory 里。
 
-## Upgrade mermaid
+## 升级 mermaid
 
-Replace `vendor/mermaid.min.js` with the `dist/mermaid.min.js` of the version you
-want, run `node build.mjs`, and re-copy `lib/client.js` into your profile.
+把 `vendor/mermaid.min.js` 替换为你想要版本的 `dist/mermaid.min.js`,运行 `node build.mjs`,再把 `lib/client.js` 复制回你的 profile。
 
-## How it works
+## 工作原理
 
-- `package.json` declares `dsh.client.platform: "web"` and exports `./client`;
-  DSH's client-modules host half scans Loader entries, serves
-  `/plugins/dsh-mermaid/client.js`, and injects it into `window.__DSH_BOOT__`.
-- The bundle is a `__ModuleLoader__` factory: the mermaid IIFE runs inside the
-  factory scope and exposes `globalThis.mermaid`, then the renderer plugin
-  (`exports.apply`) observes the DOM, renders each mermaid block, and wires the
-  toolbar/zoom/pan/export UI.
+- `package.json` 声明了 `dsh.client.platform: "web"` 并导出 `./client`;
+  DSH 的 client-modules 主机半部扫描 Loader 条目,通过
+  `/plugins/dsh-mermaid/client.js` 提供服务,并将其注入 `window.__DSH_BOOT__`。
+- bundle 是一个 `__ModuleLoader__` factory:mermaid IIFE 在 factory 作用域内执行并暴露 `globalThis.mermaid`,随后渲染器插件(`exports.apply`)监听 DOM,渲染每个 mermaid 代码块,并装配工具栏/缩放/平移/导出 UI。
 
-## License
+## 许可证
 
-MIT. Mermaid is bundled under its own MIT license — see `vendor/LICENSE-mermaid`.
+MIT。Mermaid 按其自身的 MIT 许可证打包 —— 见 `vendor/LICENSE-mermaid`。
