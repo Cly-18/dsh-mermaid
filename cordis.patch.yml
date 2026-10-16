@@ -1,0 +1,12 @@
+# Bundle patch for dsh-mermaid.
+#
+# Inserted over the profile root after every bundle layer. The user's own
+# profile cordis.patch.yml is applied last, so it still wins over this row.
+#
+# The row carries no `config`: the plugin has no settings. The rendering half
+# is the browser artifact, declared by `dsh.client` in package.json — the row
+# exists so the Host Loader has an entry to scan for that declaration, which is
+# how `dsh-client-modules` finds and serves `/plugins/dsh-mermaid/client.js`.
+- insert:
+    - id: dsh-mermaid
+      name: 'dsh-mermaid'

@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "Mermaid 图表",
+    "description": "自动渲染对话中的 mermaid 代码块，支持缩放、平移、导出 SVG 与全屏。Mermaid 已打包进 bundle，运行时不请求任何网络资源。"
+  }
+}

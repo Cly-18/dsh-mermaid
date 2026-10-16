@@ -1,29 +1,37 @@
 {
   "name": "dsh-mermaid",
-  "version": "1.0.0",
-  "description": "DSH Web 插件:自动渲染对话中的 mermaid 代码块,支持缩放/平移/工具栏/SVG 导出。Mermaid 11 已打包进客户端 bundle —— 完全离线,无 CDN,运行时零网络请求。",
+  "version": "2.0.1",
+  "description": "DSH Web 插件：自动渲染对话中的 mermaid 代码块，支持缩放/平移/工具栏/SVG 导出。Mermaid 已打包进客户端 bundle —— 完全离线，无 CDN，运行时零网络请求。",
   "type": "module",
-  "main": "lib/index.js",
+  "license": "MIT",
   "exports": {
-    ".": "./lib/index.js",
-    "./client": "./lib/client.js",
-    "./package.json": "./package.json"
+    ".": "./index.js",
+    "./client": "./client.js",
+    "./package.json": "./package.json",
+    "./locale/*.json": "./locale/*.json"
   },
-  "dsh": {
-    "client": {
-      "platform": "web"
-    }
-  },
+  "icon": "./icon.svg",
   "files": [
-    "lib/index.js",
-    "lib/client.js"
+    "index.js",
+    "client.js",
+    "cordis.patch.yml",
+    "icon.svg",
+    "locale/*.json"
   ],
   "keywords": [
     "dsh",
     "deepseek-harness",
     "mermaid",
     "diagram",
-    "plugin"
+    "plugin",
+    "bundle"
   ],
-  "license": "MIT"
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    },
+    "client": {
+      "platform": "web"
+    }
+  }
 }

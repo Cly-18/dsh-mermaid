@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "Mermaid Diagrams",
+    "description": "Renders every mermaid code block in the conversation, with zoom, pan, an SVG export, and fullscreen. Mermaid ships inside the bundle, so nothing is fetched at runtime."
+  }
+}
